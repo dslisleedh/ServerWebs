@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Real Time Server's Resource Usage</title>
+    <!--suppress JSUnresolvedLibraryURL -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.1/css/bootstrap.min.css"
+          integrity="sha512-T584yQ/tdRR5QwOpfvDfVQUidzfgc2339Lc8uBDtcp/wYu80d7jwBgAxbyMh0a9YM9F8N3tdErpFI8iaGx6x5g=="
+          crossorigin="anonymous" referrerpolicy="no-referrer"/>
+    <!--suppress JSUnresolvedLibraryURL -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.css"
+          integrity="sha512-/zs32ZEJh+/EO2N1b0PEdoA10JkdC3zJ8L5FTiQu82LR9S/rOQNfQN7U59U9BC12swNeRAz3HSzIL2vpp4fv3w=="
+          crossorigin="anonymous" referrerpolicy="no-referrer"/>
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-body">
+                    <canvas id="canvas1"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-body">
+                    <canvas id="canvas2"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!--suppress JSUnresolvedLibraryURL -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"
+        integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!--suppress JSUnresolvedLibraryURL -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.1/js/bootstrap.bundle.min.js"
+        integrity="sha512-mULnawDVcCnsk9a4aG1QLZZ6rcce/jSzEGqUkeOLy0b6q0+T6syHrxlsAGH7ZVoqC93Pd0lBqd6WguPWih7VHA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!--suppress JSUnresolvedLibraryURL -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"
+        integrity="sha512-d9xgZrVZpmmQlfonhQUvTR7lMPtO7NkZMkA0ABN3PHCbKA5nqylQ/yWlFAyY6hYgdF1Qh6nYiuADWwKB4C2WSw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+    $(document).ready(function () {
+        // const source = new WebSocket('ws://IP:port/ws/resource'); // Change this to your IP and port
+        const source = new EventSource("/resource/data")
+
+        const cpumemConfig = {
+            type: 'line',
+            data: {
+                labels: Array(30).fill("0000-00-00 00:00:00"),
+                datasets: [{
+                    label: "CPU",
+                    backgroundColor: 'rgb(255, 99, 132)',
+                    borderColor: 'rgb(255, 99, 132)',
+                    data: Array(30).fill(null),
+                    fill: false,
+                }, {
+                    label: "Memory",
+                    backgroundColor: 'rgb(54, 162, 235)',
+                    borderColor: 'rgb(54, 162, 235)',
+                    data: Array(30).fill(null),
+                    fill: false,
+                }],
+            },
+            options: {
+                responsive: true,
+                title: {
+                    display: true,
+                    text: 'CPU Usage'
+                },
+                tooltips: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                hover: {
+                    mode: 'nearest',
+                    intersect: true
+                },
+                scales: {
+                    xAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Time'
+                        }
+                    }],
+                    yAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'CPU Usage(%)'
+                        },
+                        ticks: {
+                            min: 0,
+                            max: 100,
+                        }
+                    }]
+                }
+            }
+        };
+        const gpusConfig = {
+            type: 'line',
+            data: {
+                labels: Array(30).fill(' '),
+                datasets: [{
+                    label: "GPU0",
+                    backgroundColor: 'rgb(255, 99, 132)',
+                    borderColor: 'rgb(255, 99, 132)',
+                    data: Array(30).fill(null),
+                    fill: false,
+                }, {
+                    label: "GPU1",
+                    backgroundColor: 'rgb(54, 162, 235)',
+                    borderColor: 'rgb(54, 162, 235)',
+                    data: Array(30).fill(null),
+                    fill: false,
+                }, {
+                    label: "GPU2",
+                    backgroundColor: 'rgb(255, 205, 86)',
+                    borderColor: 'rgb(255, 205, 86)',
+                    data: Array(30).fill(null),
+                    fill: false,
+                }, {
+                    label: "GPU3",
+                    backgroundColor: 'rgb(75, 192, 192)',
+                    borderColor: 'rgb(75, 192, 192)',
+                    data: Array(30).fill(null),
+                    fill: false,
+                }, {
+                    label: "GPU4",
+                    backgroundColor: 'rgb(153, 102, 255)',
+                    borderColor: 'rgb(153, 102, 255)',
+                    data: Array(30).fill(null),
+                    fill: false,
+                }, {
+                    label: "GPU5",
+                    backgroundColor: 'rgb(255, 159, 64)',
+                    borderColor: 'rgb(255, 159, 64)',
+                    data: Array(30).fill(null),
+                    fill: false,
+                }, {
+                    label: "GPU6",
+                    backgroundColor: 'rgb(37,37,36)',
+                    borderColor: 'rgb(37,37,36)',
+                    data: Array(30).fill(null),
+                    fill: false,
+                }, {
+                    label: "GPU7",
+                    backgroundColor: 'rgba(1,100,7,0.89)',
+                    borderColor: 'rgba(1,100,7,0.89)',
+                    data: Array(30).fill(null),
+                    fill: false,
+                }],
+            },
+            options: {
+                responsive: true,
+                title: {
+                    display: true,
+                    text: 'GPU Usage'
+                },
+                tooltips: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                hover: {
+                    mode: 'nearest',
+                    intersect: true
+                },
+                scales: {
+                    xAxes: [{
+                        display: false,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Time'
+                        }
+                    }],
+                    yAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'GPU Usage(%)'
+                        },
+                        ticks: {
+                            min: 0,
+                            max: 100,
+                        }
+                    }]
+                }
+            }
+        };
+        const cpumemContext = document.getElementById('canvas1').getContext('2d');
+        const cpumemChart = new Chart(cpumemContext, cpumemConfig);
+        const gpusContext = document.getElementById('canvas2').getContext('2d');
+        const gpusChart = new Chart(gpusContext, gpusConfig);
+
+        source.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+            if (cpumemConfig.data.labels.length === 30) {
+                cpumemConfig.data.labels.shift();
+                cpumemConfig.data.datasets[0].data.shift();
+                cpumemConfig.data.datasets[1].data.shift();
+
+                for (let i = 0; i < 8; i++) {
+                    gpusConfig.data.datasets[i].data.shift();
+                }
+            }
+            cpumemConfig.data.labels.push(data.time);
+            cpumemConfig.data.datasets[0].data.push(data.cpu);
+            cpumemConfig.data.datasets[1].data.push(data.mem);
+            cpumemChart.update();
+
+            for (let i = 0; i < data.gpu.length; i++) {
+                gpusConfig.data.datasets[i].data.push(data.gpu[i]);
+                gpusConfig.data.datasets[i].label = "GPU" + i + " " + data.gpu[i].toFixed(2) + "%";
+            }
+            gpusChart.update();
+        }
+    });
+</script>
+</body>
+</html>

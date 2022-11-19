@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!--suppress JSUnresolvedLibraryURL -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"
+            integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <!--suppress JSUnresolvedLibraryURL -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.1/js/bootstrap.bundle.min.js"
+            integrity="sha512-mULnawDVcCnsk9a4aG1QLZZ6rcce/jSzEGqUkeOLy0b6q0+T6syHrxlsAGH7ZVoqC93Pd0lBqd6WguPWih7VHA=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <!--suppress JSUnresolvedLibraryURL -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.1/chart.min.js"
+            integrity="sha512-Wt1bJGtlnMtGP0dqNFH1xlkLBNpEodaiQ8ZN5JLA5wpc1sUlk/O5uuOMNgvzddzkpvZ9GLyYNa8w2s7rqiTk5Q=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        td {
+            border-bottom: 2px solid rgb(0, 13, 255);
+        }
+        .chart-container {
+            position: relative;
+            resize: both;
+            overflow: hidden;
+            height: 500px;
+        }
+    </style>
+    <meta charset="UTF-8">
+    <title>Current Training Logs</title>
+</head>
+<body>
+<table style="margin-left:auto;margin-right:auto;width:100vw;table-layout: fixed">
+    <thead style="width: 100vw">
+        <tr style="width: 100vw">
+            <td colspan="420" style="text-align: center; vertical-align: center; font-size: 30px; font-weight: bold">
+                Current Training Logs
+            </td>
+        </tr>
+    </thead>
+    <tbody id="chartBody" style="width: 100vw">
+    </tbody>
+</table>
+
+<!-- JS Belows -->
+<script>
+    function insertRow(key, data) {
+        // Create the row where the chart will be inserted
+        const to_split = Object.entries(data[0].logs);
+        const middle = to_split.length / 2
+        const train_log = Object.fromEntries(to_split.slice(0, middle));
+        const valid_log = Object.fromEntries(to_split.slice(middle, data[0].logs.length));
+        const names = Object.keys(train_log);
+        const names_valid = Object.keys(valid_log);
+        const width_per = 100 / names.length;
+        const width_span = 420 / names.length;
+
+        let tr = document.createElement("tr"),
+            docFrag = new DocumentFragment();
+        tr.id = key;
+        tr.style.width = "100vh";
+        tr.style.height = "500px";
+
+        // Create the chart for the training/validation log ex. 1: loss/val_loss, 2: accuracy/val_accuracy
+        for (let i = 0; i < Object.keys(train_log).length; i++) {
+            // Create the td and Empty canvas
+            let td = document.createElement("td");
+            td.setAttribute("style", "width: " + width_per + "vw; height: 500px;");
+            td.setAttribute('colspan', width_span);
+            let div = document.createElement("div");
+            div.classList.add("chart-container");
+            div.style.width = width_per + "vw";
+            let canvas = document.createElement("canvas");
+            canvas.id = key + '_' + names[i];
+            const config = {
+                type: 'line',
+                data: {},
+                options: {
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: key + ' - ' + names[i]
+                        },
+                    },
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    tooltips: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    hover: {
+                        mode: 'nearest',
+                        intersect: true
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Epoch'
+                            }
+                        },
+                        y: {
+                            display: true,
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Value'
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Insert Actual Data into the Chart
+            config.data.labels = data.map((d) => d.epoch);
+            config.data.datasets = [{
+                label: 'Train',
+                backgroundColor: 'rgba(243,82,88,0.85)',
+                borderColor: 'rgba(243,82,88,0.85)',
+                data: data.map((d) => d.logs[names[i]]),
+                fill: false,
+            }, {
+                label: 'Valid',
+                fill: false,
+                backgroundColor: 'rgb(99,219,255)',
+                borderColor: 'rgb(99,219,255)',
+                data: data.map((d) => d.logs[names_valid[i]]),
+            }];
+
+            const Context = canvas.getContext('2d');
+            const chart = new Chart(Context, config);
+
+            // Join all the elements together
+            div.appendChild(canvas);
+            td.appendChild(div);
+            tr.appendChild(td);
+        }
+        docFrag.appendChild(tr);
+        return docFrag;
+    }
+    function deleteRow(key) {
+        // Delete the row if key is not in the data
+        document.getElementById("chartBody").removeChild(document.getElementById(key));
+    }
+
+    function updateChart(key, data) {
+        // Update chart if data's length and chart's dataset length is not same
+        const to_split = Object.entries(data[0].logs);
+        const middle = to_split.length / 2
+        const train_log = Object.fromEntries(to_split.slice(0, middle));
+        const valid_log = Object.fromEntries(to_split.slice(middle, data[0].logs.length));
+        const names = Object.keys(train_log);
+        const names_valid = Object.keys(valid_log);
+        const n_current = data.length;
+        const n_chart = Chart.getChart(key + '_' + names[0]).data.datasets[0].data.length;
+        const n_update = n_current - n_chart;
+
+        if (n_update !== 0) {
+            for (let i = 0; i < names.length; i++) {
+                const chart = Chart.getChart(key + '_' + names[i]);
+                chart.data.labels = data.map((d) => d.epoch);
+                chart.data.datasets[0].data = data.map((d) => d.logs[names[i]]);
+                chart.data.datasets[1].data = data.map((d) => d.logs[names_valid[i]]);
+                chart.update();
+            }
+        }
+    }
+</script>
+<script>
+    $(document).ready(function () {
+        const source = new EventSource("/trainlog/data");
+        let keys = []; // key and keys means train_name
+        source.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+            const data_keys = Object.keys(data);
+            const new_keys = data_keys.filter(key => !keys.includes(key));
+            const deleted_keys = keys.filter(key => !data_keys.includes(key));
+
+            // Delete old Charts
+            deleted_keys.forEach(key => {
+                deleteRow(key);
+                keys = keys.filter(k => k !== key);
+            });
+
+            // Update Charts
+            keys.forEach(key => {
+                updateChart(key, data[key]);
+            })
+
+            // Add new Charts
+            new_keys.forEach(key => {
+                document.getElementById("chartBody").appendChild(insertRow(key, data[key]));
+                keys.push(key);
+            });
+        }
+    });
+</script>
+</body>
+</html>
