@@ -10,8 +10,8 @@
             integrity="sha512-mULnawDVcCnsk9a4aG1QLZZ6rcce/jSzEGqUkeOLy0b6q0+T6syHrxlsAGH7ZVoqC93Pd0lBqd6WguPWih7VHA=="
             crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <!--suppress JSUnresolvedLibraryURL -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.1/chart.min.js"
-            integrity="sha512-Wt1bJGtlnMtGP0dqNFH1xlkLBNpEodaiQ8ZN5JLA5wpc1sUlk/O5uuOMNgvzddzkpvZ9GLyYNa8w2s7rqiTk5Q=="
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"
+            integrity="sha512-ElRFoEQdI5Ht6kZvyzXhYG9NqjtkmlkfYk0wr6wHxU9JEHakS7UJZNeml5ALk+8IKlU6jDgMabC3vkumRokgJA=="
             crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
         td {
@@ -28,15 +28,15 @@
     <title>Current Training Logs</title>
 </head>
 <body>
-<table style="margin-left:auto;margin-right:auto;width:100vw;table-layout: fixed">
-    <thead style="width: 100vw">
+<table style="width:100vw;height:auto;table-layout: fixed">
+    <thead style="width: 100vw;">
         <tr style="width: 100vw">
             <td colspan="420" style="text-align: center; vertical-align: center; font-size: 30px; font-weight: bold">
                 Current Training Logs
             </td>
         </tr>
     </thead>
-    <tbody id="chartBody" style="width: 100vw">
+    <tbody id="chartBody" style="width: 100vw; height: auto">
     </tbody>
 </table>
 
@@ -68,8 +68,11 @@
             let div = document.createElement("div");
             div.classList.add("chart-container");
             div.style.width = width_per + "vw";
+            div.style.height = "500px";
             let canvas = document.createElement("canvas");
             canvas.id = key + '_' + names[i];
+            canvas.height = 500;
+            canvas.width = 1800 / names.length;
             const config = {
                 type: 'line',
                 data: {},

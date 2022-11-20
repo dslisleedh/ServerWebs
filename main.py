@@ -47,11 +47,11 @@ async def post_log_endpoint(item: LogBody):
     return {'message': 'success'}
 
 
-# @app.on_event('startup')
-# @repeat_every(seconds=30)
-# async def delete_deprecated_logs():
-#     for k, v in app.logs.items():
-#         app.logs.pop(k) if len(v) > 0 and (datetime.now() - datetime.strptime(v[-1]['time'], "%Y-%m-%d %H:%M:%S")) > timedelta(minutes=30) else None
+@app.on_event('startup')
+@repeat_every(seconds=30)
+async def delete_deprecated_logs():
+    for k, v in app.logs.items():
+        app.logs.pop(k) if len(v) > 0 and (datetime.now() - datetime.strptime(v[-1]['time'], "%Y-%m-%d %H:%M:%S")) > timedelta(minutes=30) else None
 
 
 @app.get("/trainlog/check_keys")
