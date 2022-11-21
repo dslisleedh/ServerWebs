@@ -19,9 +19,16 @@
         }
         .chart-container {
             position: relative;
-            resize: both;
             overflow: hidden;
             height: 500px;
+        }
+        .row-header {
+            text-align: center;
+            vertical-align: center;
+            font-weight: bold;
+            width: 100vw;
+            height: 30px;
+            background-color: rgb(246,104,104);
         }
     </style>
     <meta charset="UTF-8">
@@ -55,15 +62,20 @@
 
         let tr = document.createElement("tr"),
             docFrag = new DocumentFragment();
-        tr.id = key;
-        tr.style.width = "100vh";
-        tr.style.height = "500px";
+        tr.id = 'tr-' + key;
+        tr.style.width = "100vw";
+        tr.style.height = "530px";
+        div = document.createElement("div");
+        div.classList.add("row-header");
+        div.innerHTML = key + ": Training";
+        tr.appendChild(div);
 
         // Create the chart for the training/validation log ex. 1: loss/val_loss, 2: accuracy/val_accuracy
         for (let i = 0; i < Object.keys(train_log).length; i++) {
             // Create the td and Empty canvas
             let td = document.createElement("td");
             td.setAttribute("style", "width: " + width_per + "vw; height: 500px;");
+            td.setAttribute("valign", "bottom");
             td.setAttribute('colspan', width_span);
             let div = document.createElement("div");
             div.classList.add("chart-container");
@@ -71,8 +83,6 @@
             div.style.height = "500px";
             let canvas = document.createElement("canvas");
             canvas.id = key + '_' + names[i];
-            canvas.height = 500;
-            canvas.width = 1800 / names.length;
             const config = {
                 type: 'line',
                 data: {},
@@ -80,7 +90,10 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: key + ' - ' + names[i]
+                            text: names[i],
+                            font: {
+                                size: 20
+                            }
                         },
                     },
                     responsive: true,
@@ -170,6 +183,8 @@
 <script>
     $(document).ready(function () {
         const source = new EventSource("/trainlog/data");
+        const source_end = new EventSource("/trainlog/data_end");
+
         let keys = []; // key and keys means train_name
         source.onmessage = function (event) {
             const data = JSON.parse(event.data);
@@ -193,6 +208,18 @@
                 document.getElementById("chartBody").appendChild(insertRow(key, data[key]));
                 keys.push(key);
             });
+        }
+        source_end.onmessage = function (event) {
+            //    Python List to convert to JS Array
+            const data = JSON.parse(event.data);
+            if (data.end_log_name.length !== 0) {
+                data.end_log_name.forEach(key => {
+                    var $to_change = document.getElementById('tr-' + key);
+                    // Get to_change's div(=row-header) and change the text and color
+                    $to_change.getElementsByClassName('row-header')[0].innerHTML = key + ": Finished";
+                    $to_change.getElementsByClassName('row-header')[0].style.backgroundColor = "rgb(99,219,255)";
+                });
+            }
         }
     });
 </script>

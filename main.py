@@ -13,15 +13,25 @@ from fastapi_utils.tasks import repeat_every
 
 app = FastAPI()
 app.logs = {}
+app.logs_end = {
+    'end_log_name': []
+}
 
 
 class LogBody(BaseModel):
     data: dict
 
 
+class LogEndBody(BaseModel):
+    data: str
+
+
 @app.get("/trainlog/reset_logs")
 async def reset_logs():
     app.logs = {}
+    app.logs_end = {
+        'end_log_name': []
+    }
     return 'OK'
 
 
@@ -42,11 +52,20 @@ async def post_log_endpoint(item: LogBody):
     return {'message': 'success'}
 
 
+@app.post("/trainlog/post_logs_end")
+async def post_log_end_endpoint(item: LogEndBody):
+    name = item.data
+    app.logs_end['end_log_name'].append(name)
+    return {'message': 'success'}
+
+
 @app.on_event('startup')
 @repeat_every(seconds=30)
 async def delete_deprecated_logs():
     for k, v in app.logs.items():
-        app.logs.pop(k) if len(v) > 0 and (datetime.now() - datetime.strptime(v[-1]['time'], "%Y-%m-%d %H:%M:%S")) > timedelta(minutes=30) else None
+        if len(v) > 0 and datetime.now() - datetime.strptime(v[-1]['time'], "%Y-%m-%d %H:%M:%S") > timedelta(minutes=30):
+            app.logs.pop(k)
+            app.logs_end['end_log_name'].remove(k)
 
 
 @app.get("/trainlog/check_keys")
@@ -58,12 +77,27 @@ async def log_tracker(request: Request):
     while True:
         out = json.dumps(app.logs)
         yield f"data:{out}\n\n"
-        await asyncio.sleep(2)
+        await asyncio.sleep(5)
+
+
+async def log_end_tracker(request: Request):
+    while True:
+        out = json.dumps(app.logs_end)
+        yield f"data:{out}\n\n"
+        await asyncio.sleep(5)
 
 
 @app.get("/trainlog/data")
 async def trainlog_data(request: Request):
     response = StreamingResponse(log_tracker(request), media_type="text/event-stream")
+    response.headers["Cache-Control"] = "no-cache"
+    response.headers["X-Accel-Buffering"] = "no"
+    return response
+
+
+@app.get("/trainlog/data_end")
+async def trainlog_data_end(request: Request):
+    response = StreamingResponse(log_end_tracker(request), media_type="text/event-stream")
     response.headers["Cache-Control"] = "no-cache"
     response.headers["X-Accel-Buffering"] = "no"
     return response
