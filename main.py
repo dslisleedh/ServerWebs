@@ -24,11 +24,6 @@ async def reset_logs():
     app.logs = {}
     return 'OK'
 
-# For Debugging
-@app.post("/trainlog/stack")
-async def stack_log(body: LogBody):
-    app.logs = body
-
 
 @app.post("/trainlog/post_logs")
 async def post_log_endpoint(item: LogBody):
