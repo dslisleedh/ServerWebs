@@ -48,3 +48,9 @@ class RemoteMonitorCustom(Callback):
                 "Warning: could not reach RemoteMonitor "
                 "root server at " + str(self.root)
             )
+
+    def on_train_end(self, logs=None):
+        requests.post(
+            self.root + "/trainlog/post_logs_end",
+            json={'data': self.name}
+        )
