@@ -8,36 +8,43 @@
             integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ=="
             crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <!--suppress JSUnresolvedLibraryURL -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.1/css/bootstrap.min.css"
-          integrity="sha512-T584yQ/tdRR5QwOpfvDfVQUidzfgc2339Lc8uBDtcp/wYu80d7jwBgAxbyMh0a9YM9F8N3tdErpFI8iaGx6x5g=="
-          crossorigin="anonymous" referrerpolicy="no-referrer"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.1/js/bootstrap.bundle.min.js"
+            integrity="sha512-mULnawDVcCnsk9a4aG1QLZZ6rcce/jSzEGqUkeOLy0b6q0+T6syHrxlsAGH7ZVoqC93Pd0lBqd6WguPWih7VHA=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <!--suppress JSUnresolvedLibraryURL -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.css"
-          integrity="sha512-/zs32ZEJh+/EO2N1b0PEdoA10JkdC3zJ8L5FTiQu82LR9S/rOQNfQN7U59U9BC12swNeRAz3HSzIL2vpp4fv3w=="
-          crossorigin="anonymous" referrerpolicy="no-referrer"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"
+            integrity="sha512-ElRFoEQdI5Ht6kZvyzXhYG9NqjtkmlkfYk0wr6wHxU9JEHakS7UJZNeml5ALk+8IKlU6jDgMabC3vkumRokgJA=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        .chart-container {
+            position: relative;
+            overflow: hidden;
+            width: 45vw;
+            height: 500px;
+        }
+        .high_use_gpu {
+            color: red;
+        }
+        .normal_use_gpu {
+            color: blue;
+        }
+    </style>
 </head>
 <body>
-<div class="container">
-    <div class="row">
-        <div class="col">
-            <div class="card">
-                <div class="card-body">
-                    <canvas id="canvas1"></canvas>
-                </div>
+<table style="width: 100%">
+    <tr style="width:100%">
+        <td>
+            <div class="chart-container">
+                <canvas id="canvas1"></canvas>
             </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col">
-            <div class="card">
-                <div class="card-body">
-                    <canvas id="canvas2"></canvas>
-                </div>
+        </td>
+        <td>
+            <div class="chart-container">
+                <canvas id="canvas2"></canvas>
             </div>
-        </div>
-    </div>
-</div>
-
+        </td>
+    </tr>
+</table>
 
 <!-- JS Belows -->
 <script>
@@ -65,9 +72,11 @@
             },
             options: {
                 responsive: true,
-                title: {
-                    display: true,
-                    text: 'CPU Usage'
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'CPU Usage'
+                    }
                 },
                 tooltips: {
                     mode: 'index',
@@ -78,24 +87,22 @@
                     intersect: true
                 },
                 scales: {
-                    xAxes: [{
+                    x: {
                         display: true,
                         scaleLabel: {
                             display: true,
                             labelString: 'Time'
                         }
-                    }],
-                    yAxes: [{
+                    },
+                    y: {
                         display: true,
                         scaleLabel: {
                             display: true,
                             labelString: 'CPU Usage(%)'
                         },
-                        ticks: {
-                            min: 0,
-                            max: 100,
-                        }
-                    }]
+                        min: 0,
+                        max: 100,
+                    }
                 }
             }
         };
@@ -105,8 +112,8 @@
                 labels: Array(30).fill(' '),
                 datasets: [{
                     label: "GPU0",
-                    backgroundColor: 'rgb(255, 99, 132)',
-                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgb(159,255,71)',
+                    borderColor: 'rgb(159,255,71)',
                     data: Array(30).fill(null),
                     fill: false,
                 }, {
@@ -155,9 +162,12 @@
             },
             options: {
                 responsive: true,
-                title: {
-                    display: true,
-                    text: 'GPU Usage'
+                preserveAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'GPU Usage'
+                    }
                 },
                 tooltips: {
                     mode: 'index',
@@ -168,24 +178,22 @@
                     intersect: true
                 },
                 scales: {
-                    xAxes: [{
+                    x: {
                         display: false,
                         scaleLabel: {
                             display: true,
                             labelString: 'Time'
                         }
-                    }],
-                    yAxes: [{
+                    },
+                    y: {
                         display: true,
                         scaleLabel: {
                             display: true,
                             labelString: 'GPU Usage(%)'
                         },
-                        ticks: {
-                            min: 0,
-                            max: 100,
-                        }
-                    }]
+                        min: 0,
+                        max: 100,
+                    }
                 }
             }
         };
@@ -210,10 +218,14 @@
             cpumemConfig.data.datasets[1].data.push(data.mem);
             cpumemChart.update();
 
-            for (let i = 0; i < data.gpu.length; i++) {
-                gpusConfig.data.datasets[i].data.push(data.gpu[i]);
-                gpusConfig.data.datasets[i].label = "GPU" + i + " " + data.gpu[i].toFixed(2) + "%";
-            }
+            data.gpu.forEach((gpu, index) => {
+                gpusConfig.data.datasets[index].data.push(gpu);
+                gpusConfig.data.datasets[index].label = "GPU" + index + " " + gpu.toFixed(2) + "%";
+                // MEMO: Want to change legend label's font color by GPU usage but don't know how to do it
+                // So I use the background color to indicate the usage
+                gpusConfig.data.datasets[index].borderColor = gpu > 90 ? 'rgb(255,0,0)' : gpusConfig.data.datasets[index].backgroundColor;
+            });
+
             gpusChart.update();
         }
     });
