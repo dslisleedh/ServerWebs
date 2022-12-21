@@ -20,7 +20,7 @@
             position: relative;
             overflow: hidden;
             width: 45vw;
-            height: 500px;
+            height: 80vh;
         }
         .high_use_gpu {
             color: red;
@@ -31,8 +31,8 @@
     </style>
 </head>
 <body>
-<table style="width: 100%">
-    <tr style="width:100%">
+<table style="width: 100%; height: 90%">
+    <tr style="width: 100%">
         <td>
             <div class="chart-container">
                 <canvas id="canvas1"></canvas>
@@ -72,6 +72,7 @@
             },
             options: {
                 responsive: true,
+                preserveAspectRatio: false,
                 plugins: {
                     title: {
                         display: true,

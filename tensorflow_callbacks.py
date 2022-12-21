@@ -1,26 +1,44 @@
 import tensorflow
 from tensorflow.keras.callbacks import Callback
-from tensorflow.python.util.tf_export import keras_export
 import numpy as np
 
 import logging
 import requests
 
 
-@keras_export("keras.callbacks.RemoteMonitorCustom")
+def check_train_name(name: str):
+    assert name not in requests.get(
+        root + "/trainlog/check_keys"), "Job name already exists in server, got {}".format(name)
+
+
+def send_train_log(log: dict, root: str = "http://localhost:25005", path: str = "/trainlog/post_logs"):
+    assert "name" in log.keys(), "Log must have 'name' key"
+    assert "epoch" in log.keys(), "Log must have 'epoch' key"
+
+    try:
+        requests.post(root + path, json={'data': send})
+
+    except requests.exceptions.RequestException:
+        logging.warning(
+            "Warning: could not reach RemoteMonitor "
+            "root server at " + str(root)
+        )
+
+
+def send_train_end_log(name: str, root: str = "http://localhost:25005"):
+    requests.post(root + "/trainlog/post_logs_end", json={'data': name})
+
+
 class RemoteMonitorCustom(Callback):
     def __init__(
-        self,
-        name: str,
-        root="http://localhost:25005",
-        path="/trainlog/post_logs",
+        self, name: str, root: str = "http://localhost:25005", path: str = "/trainlog/post_logs",
     ):
         super().__init__()
         self.name = name
         self.root = root
         self.path = path
 
-        assert self.name not in requests.get(root + "/trainlog/check_keys"), "Job name already exists in server, got {}".format(self.name)
+        check_train_name(name)
 
     def on_epoch_end(self, epoch, logs=None):
         if requests is None:
@@ -37,20 +55,9 @@ class RemoteMonitorCustom(Callback):
                 send[k] = v.item()
             else:
                 send[k] = v
-        try:
-            requests.post(
-                self.root + self.path,
-                json={'data': send}
-            )
 
-        except requests.exceptions.RequestException:
-            logging.warning(
-                "Warning: could not reach RemoteMonitor "
-                "root server at " + str(self.root)
-            )
+        send_train_log(send, self.root, self.path)
+
 
     def on_train_end(self, logs=None):
-        requests.post(
-            self.root + "/trainlog/post_logs_end",
-            json={'data': self.name}
-        )
+        send_train_end_log(self.name, self.root)

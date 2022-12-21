@@ -209,6 +209,7 @@
                 keys.push(key);
             });
         }
+        // LATER: Concat 2 source into 1 source
         source_end.onmessage = function (event) {
             //    Python List to convert to JS Array
             const data = JSON.parse(event.data);
